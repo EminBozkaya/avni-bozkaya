@@ -68,8 +68,7 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
 
   // ── Dynamically size the book so it ALWAYS fits the viewport ──
   const NAV_HEIGHT = 56
-  const PADDING = 24
-  const PAGE_RATIO = 720 / 540 // single page height / width
+  const PAGE_RATIO = 770 / 620
 
   const [bookW, setBookW] = useState(400)
   const [bookH, setBookH] = useState(533)
@@ -78,8 +77,9 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
     function measure() {
       const vw = window.innerWidth
       const vh = window.innerHeight
-      const availW = vw - PADDING * 2        // horizontal padding
-      const availH = vh - NAV_HEIGHT - PADDING // vertical: nav + top padding
+      const sideGap = Math.max(36, Math.round(vw * 0.045))
+      const availW = vw - sideGap * 2
+      const availH = vh - NAV_HEIGHT - 8
 
       // Spread = 2 pages side by side → aspect = (2*pageW) : pageH = 2 : PAGE_RATIO
       // pageH = pageW * PAGE_RATIO
@@ -87,7 +87,7 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
       // spreadH = (spreadW / 2) * PAGE_RATIO
 
       // Fit by width first
-      let spreadW = Math.min(availW, 1080)
+      let spreadW = Math.min(availW, 1400)
       let spreadH = (spreadW / 2) * PAGE_RATIO
 
       // If too tall, fit by height instead
@@ -141,7 +141,7 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
             const isRight = index % 2 === 0
             return (
               <PageFace key={index} side={isRight ? 'right' : 'left'}>
-                <Sheet sheet={sheet} side={isRight ? 'right' : 'left'} onSelectPoem={goToPoem} />
+                <Sheet sheet={sheet} side={isRight ? 'right' : 'left'} onSelectPoem={goToPoem} pageWidth={bookW} />
               </PageFace>
             )
           })}
@@ -150,7 +150,7 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
 
       {/* Bottom Navigation — flex-shrink-0 keeps it pinned */}
       <div
-        className="flex-shrink-0 flex items-center justify-between w-full max-w-[1080px] mx-auto font-body text-sm text-ink-light px-4"
+        className="flex-shrink-0 flex items-center justify-between w-full max-w-[1400px] mx-auto font-body text-sm text-ink-light px-4"
         style={{ height: `${NAV_HEIGHT}px` }}
       >
         <button

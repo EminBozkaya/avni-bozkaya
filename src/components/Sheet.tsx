@@ -6,13 +6,18 @@ interface SheetProps {
   sheet: SheetType | null
   side: 'left' | 'right'
   onSelectPoem?: (poemId: number) => void
+  pageWidth?: number
 }
 
 /** Renders a single book page. */
-export default function Sheet({ sheet, side, onSelectPoem }: SheetProps) {
+export default function Sheet({ sheet, side, onSelectPoem, pageWidth }: SheetProps) {
   if (!sheet) {
     return <div className="h-full" />
   }
+
+  const pw = pageWidth || 500
+  const s = Math.min(1, pw / 520)
+  const padX = `${Math.max(24, Math.round(48 * s))}px`
 
   const pageNumberEl = (
     <div
@@ -26,12 +31,12 @@ export default function Sheet({ sheet, side, onSelectPoem }: SheetProps) {
 
   if (sheet.kind === 'half-title') {
     return (
-      <div className="relative h-full flex flex-col items-center justify-center px-12 py-16">
+      <div className="relative h-full flex flex-col items-center justify-center py-16" style={{ paddingLeft: padX, paddingRight: padX }}>
         <div className="text-center">
           <p className="font-body text-ink-light/60 italic text-sm tracking-widest uppercase mb-6">
             Şiirler
           </p>
-          <h1 className="font-serif text-5xl text-ink mb-3" style={{ letterSpacing: '0.02em' }}>
+          <h1 className="font-serif text-ink mb-3" style={{ fontSize: `${Math.max(28, Math.round(44 * s))}px`, letterSpacing: '0.02em' }}>
             Güldalı
           </h1>
           <div className="w-12 h-px bg-ink/25 mx-auto my-5" />
@@ -62,10 +67,10 @@ export default function Sheet({ sheet, side, onSelectPoem }: SheetProps) {
     const showHeader = sheet.tocStart === 0
     // Look up start page from the book index
     return (
-      <div className="relative h-full px-10 py-12 flex flex-col">
+      <div className="relative h-full py-12 flex flex-col" style={{ paddingLeft: padX, paddingRight: padX }}>
         {showHeader && (
           <div className="text-center mb-8">
-            <h2 className="font-serif text-3xl text-ink">Fihrist</h2>
+            <h2 className="font-serif text-ink" style={{ fontSize: `${Math.max(22, Math.round(30 * s))}px` }}>Fihrist</h2>
             <div className="w-12 h-px bg-ink/25 mx-auto mt-3" />
           </div>
         )}
@@ -81,7 +86,7 @@ export default function Sheet({ sheet, side, onSelectPoem }: SheetProps) {
                 >
                   <span
                     className="font-body text-ink group-hover:text-rose transition-colors duration-200 whitespace-nowrap truncate"
-                    style={{ fontSize: '0.95rem' }}
+                    style={{ fontSize: `${Math.max(13, Math.round(17 * s))}px` }}
                   >
                     {poem.title}
                   </span>
@@ -101,7 +106,7 @@ export default function Sheet({ sheet, side, onSelectPoem }: SheetProps) {
 
   // poem sheet
   return (
-    <div className="relative h-full px-12 py-12 flex flex-col">
+    <div className="relative h-full py-12 flex flex-col" style={{ paddingLeft: padX, paddingRight: padX }}>
       {sheet.isFirstPage ? (
         <motion.div
           className="text-center mb-6"
@@ -109,7 +114,10 @@ export default function Sheet({ sheet, side, onSelectPoem }: SheetProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <h2 className="font-serif text-2xl text-ink leading-tight" style={{ letterSpacing: '0.01em' }}>
+          <h2
+            className="font-serif text-ink leading-tight"
+            style={{ fontSize: `${Math.max(20, Math.round(32 * s))}px`, letterSpacing: '0.01em' }}
+          >
             {sheet.poemTitle}
           </h2>
           <div className="w-10 h-px bg-ink/20 mx-auto mt-3" />
@@ -127,8 +135,8 @@ export default function Sheet({ sheet, side, onSelectPoem }: SheetProps) {
             {stanza.map((line, li) => (
               <p
                 key={li}
-                className="font-body text-ink leading-relaxed"
-                style={{ fontSize: '1rem', letterSpacing: '0.005em' }}
+                className="font-body text-ink leading-relaxed whitespace-nowrap"
+                style={{ fontSize: `${Math.max(13, Math.round(19 * s))}px`, letterSpacing: '0.005em' }}
               >
                 {line}
               </p>
