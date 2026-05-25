@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: 'Playfair Display', 'Georgia', serif;
+  --font-body: 'Cormorant Garamond', 'Georgia', serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  --color-cream: #f5f0e8;
+  --color-cream-dark: #e8dfd3;
+  --color-parchment: #faf6ef;
+  --color-ink: #2c1810;
+  --color-ink-light: #5c4033;
+  --color-rose: #c44536;
+  --color-rose-dark: #a3362a;
+  --color-gold: #b8860b;
+  --color-book-spine: #8b7355;
+  --color-book-page: #fefcf7;
+  --color-book-shadow: rgba(44, 24, 16, 0.3);
+}
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: linear-gradient(135deg, #f5f0e8 0%, #e8e0d4 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: rgba(196, 69, 54, 0.2);
+    color: var(--color-ink);
+  }
+}
