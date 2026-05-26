@@ -19,6 +19,7 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   const [currentPage, setCurrentPage] = useState(0)
   const bookRef = useRef<any>(null)
   const navTargetRef = useRef<number | null>(null)
+  const muteNextSoundRef = useRef(false)
 
   // ── Mobile detection ──
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < MOBILE_BREAKPOINT)
@@ -26,10 +27,10 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   const goNext = useCallback(() => {
     if (isMobile) {
       if (currentPage < book.sheets.length - 1) {
-        playPageTurnSound()
         setCurrentPage(p => p + 1)
       }
     } else if (bookRef.current) {
+      muteNextSoundRef.current = true
       bookRef.current.pageFlip().flipNext()
     }
   }, [isMobile, currentPage])
@@ -37,10 +38,10 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   const goPrev = useCallback(() => {
     if (isMobile) {
       if (currentPage > 0) {
-        playPageTurnSound()
         setCurrentPage(p => p - 1)
       }
     } else if (bookRef.current) {
+      muteNextSoundRef.current = true
       bookRef.current.pageFlip().flipPrev()
     }
   }, [isMobile, currentPage])
@@ -48,10 +49,10 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   const goToToc = useCallback(() => {
     const idx = book.sheets.findIndex(s => s.kind === 'toc')
     if (idx >= 0) {
-      playPageTurnSound()
       if (isMobile) {
         setCurrentPage(idx)
       } else if (bookRef.current) {
+        muteNextSoundRef.current = true
         navTargetRef.current = idx
         bookRef.current.pageFlip().turnToPage(idx)
         setCurrentPage(idx)
@@ -62,10 +63,10 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   const goToPoem = useCallback((poemId: number) => {
     const entry = book.index.get(poemId)
     if (entry) {
-      playPageTurnSound()
       if (isMobile) {
         setCurrentPage(entry.sheetIndex)
       } else if (bookRef.current) {
+        muteNextSoundRef.current = true
         navTargetRef.current = entry.sheetIndex
         bookRef.current.pageFlip().turnToPage(entry.sheetIndex)
         setCurrentPage(entry.sheetIndex)
@@ -94,7 +95,11 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
 
   const onChangeState = useCallback((e: any) => {
     if (e.data === 'flipping') {
-      playPageTurnSound()
+      if (muteNextSoundRef.current) {
+        muteNextSoundRef.current = false
+      } else {
+        playPageTurnSound()
+      }
     }
   }, [])
 
