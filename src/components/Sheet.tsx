@@ -65,24 +65,26 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth }: SheetPro
   if (sheet.kind === 'toc') {
     const slice = poems.slice(sheet.tocStart, sheet.tocStart + sheet.tocCount)
     const showHeader = sheet.tocStart === 0
+    const tocPadY = `${Math.max(20, Math.round(48 * s))}px`
     // Look up start page from the book index
     return (
-      <div className="relative h-full py-12 flex flex-col" style={{ paddingLeft: padX, paddingRight: padX }}>
+      <div className="relative h-full flex flex-col" style={{ paddingLeft: padX, paddingRight: padX, paddingTop: tocPadY, paddingBottom: tocPadY }}>
         {showHeader && (
-          <div className="text-center mb-8">
+          <div className="text-center" style={{ marginBottom: `${Math.max(12, Math.round(32 * s))}px` }}>
             <h2 className="font-serif text-ink" style={{ fontSize: `${Math.max(22, Math.round(30 * s))}px` }}>Fihrist</h2>
             <div className="w-12 h-px bg-ink/25 mx-auto mt-3" />
           </div>
         )}
-        {!showHeader && <div className="h-6" />}
-        <ul className="flex-1 space-y-2">
+        {!showHeader && <div style={{ height: `${Math.max(8, Math.round(24 * s))}px` }} />}
+        <ul className="flex-1 flex flex-col justify-between">
           {slice.map((poem) => {
             const startPage = book.index.get(poem.id)?.startPage ?? poem.page
             return (
               <li key={poem.id}>
                 <button
                   onClick={() => onSelectPoem?.(poem.id)}
-                  className="w-full flex items-end gap-2 py-1.5 px-1 rounded hover:bg-ink/5 transition-colors duration-200 group cursor-pointer text-left"
+                  className="w-full flex items-end gap-2 px-1 rounded hover:bg-ink/5 transition-colors duration-200 group cursor-pointer text-left"
+                  style={{ paddingTop: `${Math.max(2, Math.round(6 * s))}px`, paddingBottom: `${Math.max(2, Math.round(6 * s))}px` }}
                 >
                   <span
                     className="font-body text-ink group-hover:text-rose transition-colors duration-200 whitespace-nowrap truncate"

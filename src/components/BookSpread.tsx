@@ -15,13 +15,14 @@ interface BookSpreadProps {
 export default function BookSpread({ onClose }: BookSpreadProps) {
   const [currentPage, setCurrentPage] = useState(0)
   const bookRef = useRef<any>(null)
+  const navTargetRef = useRef<number | null>(null)
 
   const goNext = useCallback(() => {
     if (bookRef.current) {
       bookRef.current.pageFlip().flipNext()
     }
   }, [])
-  
+
   const goPrev = useCallback(() => {
     if (bookRef.current) {
       bookRef.current.pageFlip().flipPrev()
@@ -31,14 +32,22 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   const goToToc = useCallback(() => {
     if (bookRef.current) {
       const idx = book.sheets.findIndex(s => s.kind === 'toc')
-      if (idx >= 0) bookRef.current.pageFlip().flip(idx)
+      if (idx >= 0) {
+        navTargetRef.current = idx
+        bookRef.current.pageFlip().flip(idx)
+        setCurrentPage(idx)
+      }
     }
   }, [])
 
   const goToPoem = useCallback((poemId: number) => {
     if (bookRef.current) {
       const entry = book.index.get(poemId)
-      if (entry) bookRef.current.pageFlip().flip(entry.sheetIndex)
+      if (entry) {
+        navTargetRef.current = entry.sheetIndex
+        bookRef.current.pageFlip().flip(entry.sheetIndex)
+        setCurrentPage(entry.sheetIndex)
+      }
     }
   }, [])
 
@@ -53,7 +62,12 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   }, [goNext, goPrev, onClose])
 
   const onFlip = useCallback((e: any) => {
-    setCurrentPage(e.data)
+    if (navTargetRef.current !== null) {
+      setCurrentPage(navTargetRef.current)
+      navTargetRef.current = null
+    } else {
+      setCurrentPage(e.data)
+    }
   }, [])
 
   const onChangeState = useCallback((e: any) => {
@@ -70,42 +84,46 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   const NAV_HEIGHT = 56
   const PAGE_RATIO = 770 / 620
 
-  const [bookW, setBookW] = useState(400)
-  const [bookH, setBookH] = useState(533)
+  function calcSize() {
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const sideGap = Math.max(36, Math.round(vw * 0.045))
+    const availW = vw - sideGap * 2
+    const availH = vh - NAV_HEIGHT - 8
 
-  useEffect(() => {
-    function measure() {
-      const vw = window.innerWidth
-      const vh = window.innerHeight
-      const sideGap = Math.max(36, Math.round(vw * 0.045))
-      const availW = vw - sideGap * 2
-      const availH = vh - NAV_HEIGHT - 8
+    let spreadW = Math.min(availW, 1400)
+    let spreadH = (spreadW / 2) * PAGE_RATIO
 
-      // Spread = 2 pages side by side → aspect = (2*pageW) : pageH = 2 : PAGE_RATIO
-      // pageH = pageW * PAGE_RATIO
-      // spreadW = 2 * pageW  → pageW = spreadW / 2
-      // spreadH = (spreadW / 2) * PAGE_RATIO
-
-      // Fit by width first
-      let spreadW = Math.min(availW, 1400)
-      let spreadH = (spreadW / 2) * PAGE_RATIO
-
-      // If too tall, fit by height instead
-      if (spreadH > availH) {
-        spreadH = availH
-        spreadW = (spreadH / PAGE_RATIO) * 2
-      }
-
-      const pageW = Math.floor(spreadW / 2)
-      const pageH = Math.floor(spreadH)
-
-      setBookW(pageW)
-      setBookH(pageH)
+    if (spreadH > availH) {
+      spreadH = availH
+      spreadW = (spreadH / PAGE_RATIO) * 2
     }
 
-    measure()
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
+    return { w: Math.floor(spreadW / 2), h: Math.floor(spreadH) }
+  }
+
+  const initial = calcSize()
+  const [bookW, setBookW] = useState(initial.w)
+  const [bookH, setBookH] = useState(initial.h)
+  const [bookKey, setBookKey] = useState(0)
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    function onResize() {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        const { w, h } = calcSize()
+        setBookW(w)
+        setBookH(h)
+        setBookKey(k => k + 1)
+      }, 200)
+    }
+
+    window.addEventListener('resize', onResize)
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('resize', onResize)
+    }
   }, [])
 
   return (
@@ -122,6 +140,7 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
       >
         {/* @ts-ignore */}
         <HTMLFlipBook
+          key={bookKey}
           width={bookW}
           height={bookH}
           size="fixed"
@@ -135,6 +154,7 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
           onInit={onInit}
           ref={bookRef}
           flippingTime={800}
+          startPage={currentPage}
           usePortrait={false}
         >
           {book.sheets.map((sheet, index) => {

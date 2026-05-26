@@ -53,7 +53,8 @@ function chunk<T>(arr: T[], size: number): T[][] {
 
 const MAX_STANZAS_FIRST_PAGE = 2
 const MAX_STANZAS_CONT_PAGE = 3
-const TOC_ITEMS_PER_PAGE = 14
+const TOC_FIRST_PAGE_ITEMS = 8
+const TOC_CONT_PAGE_ITEMS = 10
 
 export interface Book {
   sheets: Sheet[]
@@ -81,16 +82,20 @@ export function buildBook(): Book {
   // Page 2: blank
   pushSheet({ kind: 'blank', pageNumber: currentPageNo() })
 
-  // TOC pages
+  // TOC pages — first page has fewer items (header takes space), rest get more
   const totalPoems = poems.length
-  const tocPageCount = Math.ceil(totalPoems / TOC_ITEMS_PER_PAGE)
-  for (let i = 0; i < tocPageCount; i++) {
+  let tocItemsPlaced = 0
+  while (tocItemsPlaced < totalPoems) {
+    const isFirstTocPage = tocItemsPlaced === 0
+    const capacity = isFirstTocPage ? TOC_FIRST_PAGE_ITEMS : TOC_CONT_PAGE_ITEMS
+    const itemsThisPage = Math.min(capacity, totalPoems - tocItemsPlaced)
     pushSheet({
       kind: 'toc',
-      tocStart: i * TOC_ITEMS_PER_PAGE,
-      tocCount: Math.min(TOC_ITEMS_PER_PAGE, totalPoems - i * TOC_ITEMS_PER_PAGE),
+      tocStart: tocItemsPlaced,
+      tocCount: itemsThisPage,
       pageNumber: currentPageNo(),
     })
+    tocItemsPlaced += itemsThisPage
   }
 
   // Ensure the next poem starts on a recto (odd page)
