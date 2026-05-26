@@ -40,9 +40,15 @@ function fillCrinkleNoise(data: Float32Array, amplitude = 1) {
 export function playPageTurnSound(_direction?: 1 | -1) {
   // Create a new Audio object each time to allow overlapping rapid page turns
   const audio = new Audio('/sounds/paper_flip.mp3')
-  audio.play().catch((err) => {
-    console.warn('Audio play failed (maybe no user interaction yet?):', err)
-  })
+  audio.volume = 0.25 // Ses seviyesini kıstık
+  
+  // Sesin yüklenmesini bekleyip toplam sürenin %25'ini (dörtte birini) atlıyoruz
+  audio.addEventListener('loadedmetadata', () => {
+    audio.currentTime = audio.duration * 0.25
+    audio.play().catch((err) => {
+      console.warn('Audio play failed (maybe no user interaction yet?):', err)
+    })
+  }, { once: true })
 }
 
 /**
