@@ -48,12 +48,12 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   const goToToc = useCallback(() => {
     const idx = book.sheets.findIndex(s => s.kind === 'toc')
     if (idx >= 0) {
+      playPageTurnSound()
       if (isMobile) {
-        playPageTurnSound()
         setCurrentPage(idx)
       } else if (bookRef.current) {
         navTargetRef.current = idx
-        bookRef.current.pageFlip().flip(idx)
+        bookRef.current.pageFlip().turnToPage(idx)
         setCurrentPage(idx)
       }
     }
@@ -62,12 +62,12 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   const goToPoem = useCallback((poemId: number) => {
     const entry = book.index.get(poemId)
     if (entry) {
+      playPageTurnSound()
       if (isMobile) {
-        playPageTurnSound()
         setCurrentPage(entry.sheetIndex)
       } else if (bookRef.current) {
         navTargetRef.current = entry.sheetIndex
-        bookRef.current.pageFlip().flip(entry.sheetIndex)
+        bookRef.current.pageFlip().turnToPage(entry.sheetIndex)
         setCurrentPage(entry.sheetIndex)
       }
     }
@@ -224,8 +224,8 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
             className="flex items-center gap-1.5 transition-colors hover:text-ink cursor-pointer"
             title="Fihrist"
           >
-            <BookOpen size={14} />
-            <span className="hidden sm:inline">Fihrist</span>
+            <BookOpen size={14} className="hidden sm:inline-block" />
+            <span>Fihrist</span>
           </button>
           <span className="text-ink/15">|</span>
           <button

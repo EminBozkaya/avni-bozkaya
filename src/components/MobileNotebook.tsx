@@ -64,13 +64,13 @@ export default function MobileNotebook({ currentPage, onPageChange, onSelectPoem
     }
   }, [])
 
-  // Dışarıdan (örn. alt butonlardan) gelen sayfa değişikliklerini HTMLFlipBook'a senkronize et
+  // Dışarıdan (örn. alt butonlardan veya Fihrist'ten) gelen sayfa değişikliklerini HTMLFlipBook'a senkronize et
   useEffect(() => {
     if (bookRef.current) {
       const flipBook = bookRef.current.pageFlip()
       if (flipBook && flipBook.getCurrentPageIndex() !== currentPage) {
         navTargetRef.current = currentPage
-        flipBook.flip(currentPage)
+        flipBook.turnToPage(currentPage)
       }
     }
   }, [currentPage])

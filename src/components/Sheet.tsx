@@ -118,17 +118,19 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
               <li key={poem.id}>
                 <button
                   onClick={() => onSelectPoem?.(poem.id)}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
                   className="w-full flex items-end gap-2 px-1 rounded hover:bg-ink/5 transition-colors duration-200 group cursor-pointer text-left"
                   style={{ paddingTop: `${Math.max(2, Math.round(6 * s))}px`, paddingBottom: `${Math.max(2, Math.round(6 * s))}px` }}
                 >
                   <span
-                    className="font-body text-ink group-hover:text-rose transition-colors duration-200 whitespace-nowrap truncate"
+                    className="pointer-events-none font-body text-ink group-hover:text-rose transition-colors duration-200 whitespace-nowrap truncate"
                     style={{ fontSize: `${Math.max(13, Math.round(17 * s))}px` }}
                   >
                     {poem.title}
                   </span>
-                  <span className="flex-1 border-b border-dotted border-ink/20 mb-1 min-w-[16px]" />
-                  <span className="font-body text-ink-light text-xs tabular-nums">
+                  <span className="pointer-events-none flex-1 border-b border-dotted border-ink/20 mb-1 min-w-[16px]" />
+                  <span className="pointer-events-none font-body text-ink-light text-xs tabular-nums">
                     {startPage}
                   </span>
                 </button>
