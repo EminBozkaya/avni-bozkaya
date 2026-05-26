@@ -3,10 +3,13 @@ import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
 import HTMLFlipBook from 'react-pageflip'
 import Sheet from './Sheet'
+import MobileNotebook from './MobileNotebook'
 import {
   book,
 } from '../utils/paginate'
 import { playPageTurnSound, playBookOpenSound } from '../utils/sound'
+
+const MOBILE_BREAKPOINT = 768
 
 interface BookSpreadProps {
   onClose: () => void
@@ -17,39 +20,58 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   const bookRef = useRef<any>(null)
   const navTargetRef = useRef<number | null>(null)
 
+  // ── Mobile detection ──
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < MOBILE_BREAKPOINT)
+
   const goNext = useCallback(() => {
-    if (bookRef.current) {
+    if (isMobile) {
+      if (currentPage < book.sheets.length - 1) {
+        playPageTurnSound()
+        setCurrentPage(p => p + 1)
+      }
+    } else if (bookRef.current) {
       bookRef.current.pageFlip().flipNext()
     }
-  }, [])
+  }, [isMobile, currentPage])
 
   const goPrev = useCallback(() => {
-    if (bookRef.current) {
+    if (isMobile) {
+      if (currentPage > 0) {
+        playPageTurnSound()
+        setCurrentPage(p => p - 1)
+      }
+    } else if (bookRef.current) {
       bookRef.current.pageFlip().flipPrev()
     }
-  }, [])
+  }, [isMobile, currentPage])
 
   const goToToc = useCallback(() => {
-    if (bookRef.current) {
-      const idx = book.sheets.findIndex(s => s.kind === 'toc')
-      if (idx >= 0) {
+    const idx = book.sheets.findIndex(s => s.kind === 'toc')
+    if (idx >= 0) {
+      if (isMobile) {
+        playPageTurnSound()
+        setCurrentPage(idx)
+      } else if (bookRef.current) {
         navTargetRef.current = idx
         bookRef.current.pageFlip().flip(idx)
         setCurrentPage(idx)
       }
     }
-  }, [])
+  }, [isMobile])
 
   const goToPoem = useCallback((poemId: number) => {
-    if (bookRef.current) {
-      const entry = book.index.get(poemId)
-      if (entry) {
+    const entry = book.index.get(poemId)
+    if (entry) {
+      if (isMobile) {
+        playPageTurnSound()
+        setCurrentPage(entry.sheetIndex)
+      } else if (bookRef.current) {
         navTargetRef.current = entry.sheetIndex
         bookRef.current.pageFlip().flip(entry.sheetIndex)
         setCurrentPage(entry.sheetIndex)
       }
     }
-  }, [])
+  }, [isMobile])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -112,10 +134,14 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
     function onResize() {
       clearTimeout(timer)
       timer = setTimeout(() => {
-        const { w, h } = calcSize()
-        setBookW(w)
-        setBookH(h)
-        setBookKey(k => k + 1)
+        const mobile = window.innerWidth < MOBILE_BREAKPOINT
+        setIsMobile(mobile)
+        if (!mobile) {
+          const { w, h } = calcSize()
+          setBookW(w)
+          setBookH(h)
+          setBookKey(k => k + 1)
+        }
       }, 200)
     }
 
@@ -138,34 +164,42 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.7, ease: 'easeOut' }}
       >
-        {/* @ts-ignore */}
-        <HTMLFlipBook
-          key={bookKey}
-          width={bookW}
-          height={bookH}
-          size="fixed"
-          maxShadowOpacity={0.5}
-          showCover={true}
-          mobileScrollSupport={true}
-          useMouseEvents={true}
-          className="book-container shadow-2xl"
-          onFlip={onFlip}
-          onChangeState={onChangeState}
-          onInit={onInit}
-          ref={bookRef}
-          flippingTime={800}
-          startPage={currentPage}
-          usePortrait={false}
-        >
-          {book.sheets.map((sheet, index) => {
-            const isRight = index % 2 === 0
-            return (
-              <PageFace key={index} side={isRight ? 'right' : 'left'}>
-                <Sheet sheet={sheet} side={isRight ? 'right' : 'left'} onSelectPoem={goToPoem} pageWidth={bookW} />
-              </PageFace>
-            )
-          })}
-        </HTMLFlipBook>
+        {isMobile ? (
+          <MobileNotebook
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onSelectPoem={goToPoem}
+          />
+        ) : (
+          /* @ts-ignore */
+          <HTMLFlipBook
+            key={bookKey}
+            width={bookW}
+            height={bookH}
+            size="fixed"
+            maxShadowOpacity={0.5}
+            showCover={true}
+            mobileScrollSupport={true}
+            useMouseEvents={true}
+            className="book-container shadow-2xl"
+            onFlip={onFlip}
+            onChangeState={onChangeState}
+            onInit={onInit}
+            ref={bookRef}
+            flippingTime={800}
+            startPage={currentPage}
+            usePortrait={false}
+          >
+            {book.sheets.map((sheet, index) => {
+              const isRight = index % 2 === 0
+              return (
+                <PageFace key={index} side={isRight ? 'right' : 'left'}>
+                  <Sheet sheet={sheet} side={isRight ? 'right' : 'left'} onSelectPoem={goToPoem} pageWidth={bookW} pageHeight={bookH} />
+                </PageFace>
+              )
+            })}
+          </HTMLFlipBook>
+        )}
       </motion.div>
 
       {/* Bottom Navigation — flex-shrink-0 keeps it pinned */}

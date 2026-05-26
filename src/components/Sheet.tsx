@@ -7,17 +7,52 @@ interface SheetProps {
   side: 'left' | 'right'
   onSelectPoem?: (poemId: number) => void
   pageWidth?: number
+  pageHeight?: number
+  isMobileView?: boolean
+}
+
+/**
+ * Calculate an optimal font size for a poem page on mobile.
+ * Fits the longest line horizontally and all lines vertically,
+ * then returns the largest size that satisfies both constraints.
+ */
+function calcMobilePoemFont(
+  stanzas: string[][],
+  isFirstPage: boolean,
+  availW: number,
+  availH: number,
+): number {
+  const allLines = stanzas.flat()
+  if (allLines.length === 0) return 13
+
+  const longestLine = Math.max(...allLines.map((l) => l.length))
+  const totalLines = allLines.length
+  const stanzaGaps = Math.max(0, stanzas.length - 1)
+
+  // Horizontal: longest line must fit without wrapping
+  // Average char width ≈ 0.52 × fontSize for proportional Turkish text
+  const hMax = longestLine > 0 ? availW / (longestLine * 0.52) : 20
+
+  // Vertical: title + all lines + stanza gaps must fit
+  const titleH = isFirstPage ? 44 : 26
+  const gapPx = 10
+  const remainH = availH - titleH - stanzaGaps * gapPx
+  const vMax = remainH > 0 ? remainH / (totalLines * 1.55) : 13
+
+  return Math.max(7, Math.min(18, hMax, vMax))
 }
 
 /** Renders a single book page. */
-export default function Sheet({ sheet, side, onSelectPoem, pageWidth }: SheetProps) {
+export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight, isMobileView }: SheetProps) {
   if (!sheet) {
     return <div className="h-full" />
   }
 
   const pw = pageWidth || 500
+  const ph = pageHeight || Math.round(pw * 1.242)
   const s = Math.min(1, pw / 520)
-  const padX = `${Math.max(24, Math.round(48 * s))}px`
+  const isMobile = isMobileView ?? false
+  const padX = `${Math.max(isMobile ? 16 : 24, Math.round(48 * s))}px`
 
   const pageNumberEl = (
     <div
@@ -107,38 +142,61 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth }: SheetPro
   }
 
   // poem sheet
+  const padXNum = isMobile ? Math.max(16, Math.round(28 * s)) : Math.max(24, Math.round(48 * s))
+  const padYNum = isMobile ? Math.max(16, Math.round(28 * s)) : 48
+  const poemPadX = `${padXNum}px`
+  const poemPadY = `${padYNum}px`
+
+  // Font size: on mobile, dynamically calculate per page; on tablet/desktop, use standard scaling
+  const desktopFontSize = Math.max(13, Math.round(19 * s))
+  const mobileFontSize = isMobile
+    ? Math.round(calcMobilePoemFont(sheet.stanzas, sheet.isFirstPage, pw - padXNum * 2, ph - padYNum * 2 - 20))
+    : desktopFontSize
+  const poemFontSize = isMobile ? mobileFontSize : desktopFontSize
+
+  const titleSize = isMobile
+    ? Math.max(12, Math.round(poemFontSize * 1.5))
+    : Math.max(20, Math.round(32 * s))
+  const stanzaGap = isMobile ? `${Math.max(4, Math.round(8 * (poemFontSize / 13)))}px` : '20px'
+  const titleMb = isMobile ? `${Math.max(4, Math.round(8 * (poemFontSize / 13)))}px` : '24px'
+
   return (
-    <div className="relative h-full py-12 flex flex-col" style={{ paddingLeft: padX, paddingRight: padX }}>
+    <div className="relative h-full flex flex-col" style={{ paddingLeft: poemPadX, paddingRight: poemPadX, paddingTop: poemPadY, paddingBottom: poemPadY }}>
       {sheet.isFirstPage ? (
         <motion.div
-          className="text-center mb-6"
+          className="text-center"
+          style={{ marginBottom: titleMb }}
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
           <h2
             className="font-serif text-ink leading-tight"
-            style={{ fontSize: `${Math.max(20, Math.round(32 * s))}px`, letterSpacing: '0.01em' }}
+            style={{ fontSize: `${titleSize}px`, letterSpacing: '0.01em' }}
           >
             {sheet.poemTitle}
           </h2>
-          <div className="w-10 h-px bg-ink/20 mx-auto mt-3" />
+          <div className="w-10 h-px bg-ink/20 mx-auto mt-2" />
         </motion.div>
       ) : (
-        <div className="text-center mb-6">
-          <p className="font-body italic text-ink-light/55 text-sm">
+        <div className="text-center" style={{ marginBottom: titleMb }}>
+          <p className="font-body italic text-ink-light/55" style={{ fontSize: `${isMobile ? Math.max(8, poemFontSize - 1) : 14}px` }}>
             — {sheet.poemTitle} (devamı) —
           </p>
         </div>
       )}
-      <div className="flex-1 flex flex-col items-center justify-center gap-5">
+      <div className="flex-1 flex flex-col items-center justify-center" style={{ gap: stanzaGap }}>
         {sheet.stanzas.map((stanza, si) => (
           <div key={si} className="text-center">
             {stanza.map((line, li) => (
               <p
                 key={li}
-                className="font-body text-ink leading-relaxed whitespace-nowrap"
-                style={{ fontSize: `${Math.max(13, Math.round(19 * s))}px`, letterSpacing: '0.005em' }}
+                className="font-body text-ink whitespace-nowrap"
+                style={{
+                  fontSize: `${poemFontSize}px`,
+                  lineHeight: isMobile ? '1.45' : '1.6',
+                  letterSpacing: '0.005em',
+                }}
               >
                 {line}
               </p>
