@@ -28,7 +28,7 @@ function WatermarkRose() {
       aria-hidden
     >
       <img
-        src="/images/rose_motif.png"
+        src="/images/rose_motif.png?v=2"
         alt=""
         draggable={false}
         style={{
@@ -61,7 +61,7 @@ function OrnamentRose({ side }: { side: 'left' | 'right' }) {
       }}
     >
       <img
-        src="/images/rose_motif.png"
+        src="/images/rose_motif.png?v=2"
         alt=""
         draggable={false}
         style={{
