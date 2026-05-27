@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://avnibozkaya.com/</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://avnibozkaya.com/images/guldali_giris_resmi.png</image:loc>
+      <image:title>Güldalı Şiir Kitabı - Avni Bozkaya</image:title>
+      <image:caption>Pasinler (Hasankale) Erzurum'lu şair ve matematik öğretmeni Avni Bozkaya'nın Güldalı şiir kitabı kapak görseli</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://avnibozkaya.com/images/guldali_kitap_kapak.png</image:loc>
+      <image:title>Güldalı Kitap Kapağı - Avni Bozkaya Şiir Kitabı</image:title>
+      <image:caption>Dadaş Avni Bozkaya'nın Güldalı şiir kitabının iç kapak tasarımı</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://avnibozkaya.com/images/og-social-share.png</image:loc>
+      <image:title>Güldalı - Avni Bozkaya Sosyal Paylaşım Görseli</image:title>
+      <image:caption>Pasinler Erzurum şairi Avni Bozkaya'nın Güldalı şiir kitabı sosyal medya paylaşım görseli</image:caption>
+    </image:image>
+  </url>
+</urlset>

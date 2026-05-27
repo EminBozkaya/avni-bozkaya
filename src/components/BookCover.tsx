@@ -13,7 +13,7 @@ export default function BookCover({ onOpen }: BookCoverProps) {
       {/* Mobile: full-screen cover image */}
       <motion.img
         src="/images/guldali_giris_resmi_mobile.png"
-        alt="Güldalı - Avni Bozkaya"
+        alt="Güldalı Şiir Kitabı - Avni Bozkaya - Pasinler Erzurum Şairi ve Matematik Öğretmeni"
         className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none sm:hidden"
         draggable={false}
         initial={{ opacity: 0, scale: 1.05 }}
@@ -24,7 +24,7 @@ export default function BookCover({ onOpen }: BookCoverProps) {
       {/* Tablet & Desktop: full-screen cover image */}
       <motion.img
         src="/images/guldali_giris_resmi.png"
-        alt="Güldalı - Avni Bozkaya"
+        alt="Güldalı Şiir Kitabı - Avni Bozkaya - Pasinler Hasankale Erzurum Şairi, Dadaş, Matematik Öğretmeni"
         className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none hidden sm:block"
         draggable={false}
         initial={{ opacity: 0, scale: 1.05 }}
