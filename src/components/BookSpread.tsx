@@ -229,7 +229,7 @@ export default function BookSpread({ onClose, initialPoemId, onPoemNavigate }: B
             currentPage > 0 ? 'hover:text-ink hover:bg-ink/5 cursor-pointer' : 'opacity-25 cursor-default'
           }`}
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={22} />
           <span className="hidden sm:inline">Önceki</span>
         </button>
 
@@ -266,7 +266,7 @@ export default function BookSpread({ onClose, initialPoemId, onPoemNavigate }: B
           }`}
         >
           <span className="hidden sm:inline">Sonraki</span>
-          <ChevronRight size={16} />
+          <ChevronRight size={22} />
         </button>
       </div>
     </div>

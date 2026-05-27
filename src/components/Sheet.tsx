@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { book, type Sheet as SheetType } from '../utils/paginate'
 import { poems } from '../data/poems'
+import RoseMotif from './RoseMotif'
 
 interface SheetProps {
   sheet: SheetType | null
@@ -56,9 +57,9 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
 
   const pageNumberEl = (
     <div
-      className={`absolute bottom-6 ${
-        side === 'left' ? 'left-10' : 'right-10'
-      } font-body text-[11px] tracking-widest text-ink-light/45`}
+      className={`absolute bottom-2 ${
+        side === 'left' ? 'left-4' : 'right-4'
+      } font-body text-[19px] tracking-widest text-ink-light/45`}
     >
       {sheet.pageNumber}
     </div>
@@ -89,9 +90,7 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
   if (sheet.kind === 'blank') {
     return (
       <div className="relative h-full">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="font-serif text-ink/8 text-3xl select-none">❦</span>
-        </div>
+        <RoseMotif variant="watermark" />
         {pageNumberEl}
       </div>
     )
@@ -240,6 +239,8 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
           </div>
         ))}
       </div>
+      {/* Rose ornament on the opposite side of the page number */}
+      <RoseMotif variant="ornament" side={side} />
       {pageNumberEl}
     </div>
   )
