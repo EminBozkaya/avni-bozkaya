@@ -97,6 +97,40 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
     )
   }
 
+  if (sheet.kind === 'foreword') {
+    const fwPadY = `${Math.max(20, Math.round(48 * s))}px`
+    const fwFontSize = `${Math.max(12, Math.round(15 * s))}px`
+    return (
+      <div
+        className="relative h-full flex flex-col"
+        style={{ paddingLeft: padX, paddingRight: padX, paddingTop: fwPadY, paddingBottom: fwPadY }}
+      >
+        {sheet.isFirstPage && (
+          <div className="text-center" style={{ marginBottom: `${Math.max(16, Math.round(32 * s))}px` }}>
+            <h2
+              className="font-serif text-ink"
+              style={{ fontSize: `${Math.max(22, Math.round(30 * s))}px` }}
+            >
+              Ön Söz
+            </h2>
+            <div className="w-12 h-px bg-ink/25 mx-auto mt-3" />
+          </div>
+        )}
+        <div className="flex-1 flex flex-col justify-center" style={{ gap: `${Math.max(12, Math.round(20 * s))}px` }}>
+          {sheet.paragraphs.map((para, i) => (
+            <p
+              key={i}
+              className="font-body text-ink leading-relaxed text-justify"
+              style={{ fontSize: fwFontSize, textIndent: '1.5em' }}
+            >
+              {para}
+            </p>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   if (sheet.kind === 'toc') {
     const slice = poems.slice(sheet.tocStart, sheet.tocStart + sheet.tocCount)
     const showHeader = sheet.tocStart === 0

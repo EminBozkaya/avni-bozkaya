@@ -13,10 +13,18 @@ const MOBILE_BREAKPOINT = 768
 
 interface BookSpreadProps {
   onClose: () => void
+  initialPoemId?: number | null
+  onPoemNavigate?: (poemId: number) => void
 }
 
-export default function BookSpread({ onClose }: BookSpreadProps) {
-  const [currentPage, setCurrentPage] = useState(0)
+export default function BookSpread({ onClose, initialPoemId, onPoemNavigate }: BookSpreadProps) {
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (initialPoemId != null) {
+      const entry = book.index.get(initialPoemId)
+      if (entry) return entry.sheetIndex
+    }
+    return 0
+  })
   const bookRef = useRef<any>(null)
   const navTargetRef = useRef<number | null>(null)
   const muteNextSoundRef = useRef(false)
@@ -71,8 +79,9 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
         bookRef.current.pageFlip().turnToPage(entry.sheetIndex)
         setCurrentPage(entry.sheetIndex)
       }
+      onPoemNavigate?.(poemId)
     }
-  }, [isMobile])
+  }, [isMobile, onPoemNavigate])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -85,13 +94,14 @@ export default function BookSpread({ onClose }: BookSpreadProps) {
   }, [goNext, goPrev, onClose])
 
   const onFlip = useCallback((e: any) => {
-    if (navTargetRef.current !== null) {
-      setCurrentPage(navTargetRef.current)
-      navTargetRef.current = null
-    } else {
-      setCurrentPage(e.data)
+    const pageIdx = navTargetRef.current !== null ? navTargetRef.current : e.data
+    navTargetRef.current = null
+    setCurrentPage(pageIdx)
+    const sheet = book.sheets[pageIdx]
+    if (sheet && sheet.kind === 'poem' && sheet.isFirstPage) {
+      onPoemNavigate?.(sheet.poemId)
     }
-  }, [])
+  }, [onPoemNavigate])
 
   const onChangeState = useCallback((e: any) => {
     if (e.data === 'flipping') {

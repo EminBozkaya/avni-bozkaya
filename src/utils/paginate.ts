@@ -16,6 +16,7 @@ export type Sheet =
     }
   | { kind: 'blank'; pageNumber: number }
   | { kind: 'half-title'; pageNumber: number }
+  | { kind: 'foreword'; paragraphs: string[]; isFirstPage: boolean; pageNumber: number }
 
 export interface PoemIndexEntry {
   poemId: number
@@ -56,6 +57,22 @@ const MAX_STANZAS_CONT_PAGE = 3
 const TOC_FIRST_PAGE_ITEMS = 8
 const TOC_CONT_PAGE_ITEMS = 10
 
+const FOREWORD_PAGES: string[][] = [
+  [
+    'Bu eser, ömrünü ilme, insan yetiştirmeye ve güzel ahlâka adamış kıymetli eğitimci ve şair Avni Bozkaya’ın gönül dünyasından süzülen şiirlerden oluşmaktadır. “Güldalı” mahlasıyla kaleme aldığı bu dizelerde; memleket sevgisi, anne hasreti, gençlere nasihat, insan sevgisi ve Hak aşkı içten bir üslupla hayat bulmaktadır.',
+    '12 Haziran 1957’de Erzurum’un Pasinler ilçesinde dünyaya gelen Avni Bozkaya, Atatürk Üniversitesi Kazım Karabekir Eğitim Fakültesi Matematik Öğretmenliği bölümünden mezun olduktan sonra hayatını öğrencilerine adamış; Trabzon, Konya, Mardin ve Erzurum’da yıllarca öğretmenlik ve idarecilik yapmıştır. Mesleğini yalnızca bir görev olarak değil, gençlerin gönlüne dokunma vesilesi olarak görmüş; öğrencilerine daima rehberlik eden, sevgiyle yaklaşan örnek bir eğitimci olmuştur.',
+  ],
+  [
+    '1983 yılında hayatını Selvi Bozkaya ile birleştiren merhum şair, dört çocuk babasıdır. Hayatının her döneminde yanında olan kıymetli eşi Selvi Bozkaya; gerek meslek hayatında gerek sosyal ilişkilerinde kendisine büyük destek olmuş, onun en yakın yol arkadaşı olmuştur. Kaleme aldığı şiirlerin ve manzum hikâyelerin oluşum sürecinde çoğu zaman birlikte fikir yürüttükleri, duygularını birlikte olgunlaştırdıkları aile fertleri tarafından daima hissedilmiştir. Bu yönüyle eserlerinde yalnızca bireysel bir gönül dünyasının değil; sevgi, sadakat ve güçlü bir aile bağının da izleri bulunmaktadır.',
+    'Hayatı boyunca doğruluktan ayrılmayan, kimseyi incitmemeye özen gösteren, gönül insanı bir karaktere sahip olan merhum şair; boş vakitlerini kalbindeki samimi duyguları mısralara dökerek değerlendirmiştir. Yazdığı şiirlerde bazen bir annenin duası, bazen memleket toprağının kokusu, bazen de Hak’ka duyulan derin muhabbet hissedilmektedir.',
+  ],
+  [
+    '2016 yılının Ocak ayında, henüz görevini sürdürmekteyken Hakk’ın rahmetine kavuşan Avni Bozkaya’dan geriye; güzel hatıralar, yetiştirdiği öğrenciler ve gönüllere dokunan bu kıymetli eserler kalmıştır.',
+    'Elinizde bulunan bu dijital eser, onun şiirlerini daha düzenli, erişilebilir ve huzurlu bir okuma deneyimiyle gelecek nesillere ulaştırabilmek amacıyla hazırlanmıştır. Sayfalar arasında dolaşırken yalnızca şiir değil; samimiyet, edep, merhamet ve insan sevgisiyle yoğrulmuş bir gönül dünyasıyla da karşılaşacağınızı ümit ediyoruz.',
+    'Rahmetli Avni Bozkaya’ı rahmet ve dualarla yâd ediyor; bu satırların gönüllerinize dokunmasını temenni ediyoruz.',
+  ],
+]
+
 export interface Book {
   sheets: Sheet[]
   index: Map<number, PoemIndexEntry>
@@ -81,6 +98,21 @@ export function buildBook(): Book {
   pushSheet({ kind: 'half-title', pageNumber: currentPageNo() })
   // Page 2: blank
   pushSheet({ kind: 'blank', pageNumber: currentPageNo() })
+
+  // Foreword pages (Ön Söz)
+  for (let i = 0; i < FOREWORD_PAGES.length; i++) {
+    pushSheet({
+      kind: 'foreword',
+      paragraphs: FOREWORD_PAGES[i],
+      isFirstPage: i === 0,
+      pageNumber: currentPageNo(),
+    })
+  }
+
+  // Ensure the TOC starts on a recto (odd page) after foreword
+  if (currentPageNo() % 2 === 0) {
+    pushSheet({ kind: 'blank', pageNumber: currentPageNo() })
+  }
 
   // TOC pages — first page has fewer items (header takes space), rest get more
   const totalPoems = poems.length
