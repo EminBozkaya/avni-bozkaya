@@ -7,13 +7,13 @@ import { poems, type Poem } from '../data/poems'
 export type Sheet =
   | { kind: 'toc'; tocStart: number; tocCount: number; pageNumber: number }
   | {
-      kind: 'poem'
-      poemId: number
-      poemTitle: string
-      isFirstPage: boolean
-      stanzas: string[][]
-      pageNumber: number
-    }
+    kind: 'poem'
+    poemId: number
+    poemTitle: string
+    isFirstPage: boolean
+    stanzas: string[][]
+    pageNumber: number
+  }
   | { kind: 'blank'; pageNumber: number }
   | { kind: 'half-title'; pageNumber: number }
   | { kind: 'foreword'; paragraphs: string[]; isFirstPage: boolean; pageNumber: number }
@@ -59,7 +59,7 @@ const TOC_CONT_PAGE_ITEMS = 10
 
 const FOREWORD_PAGES: string[][] = [
   [
-    'Bu eser, ömrünü ilme, insan yetiştirmeye ve güzel ahlâka adamış kıymetli eğitimci ve şair Avni Bozkaya’ın gönül dünyasından süzülen şiirlerden oluşmaktadır. “Güldalı” mahlasıyla kaleme aldığı bu dizelerde; memleket sevgisi, anne hasreti, gençlere nasihat, insan sevgisi ve Hak aşkı içten bir üslupla hayat bulmaktadır.',
+    'Bu eser, ömrünü ilme, insan yetiştirmeye ve güzel ahlâka adamış kıymetli eğitimci ve şair Avni Bozkaya’nın gönül dünyasından süzülen şiirlerden oluşmaktadır. “Güldalı” mahlasıyla kaleme aldığı bu dizelerde; memleket sevgisi, anne hasreti, gençlere nasihat, insan sevgisi ve Hak aşkı içten bir üslupla hayat bulmaktadır.',
     '12 Haziran 1957’de Erzurum’un Pasinler ilçesinde dünyaya gelen Avni Bozkaya, Atatürk Üniversitesi Kazım Karabekir Eğitim Fakültesi Matematik Öğretmenliği bölümünden mezun olduktan sonra hayatını öğrencilerine adamış; Trabzon, Konya, Mardin ve Erzurum’da yıllarca öğretmenlik ve idarecilik yapmıştır. Mesleğini yalnızca bir görev olarak değil, gençlerin gönlüne dokunma vesilesi olarak görmüş; öğrencilerine daima rehberlik eden, sevgiyle yaklaşan örnek bir eğitimci olmuştur.',
   ],
   [
