@@ -1,0 +1,4 @@
+# Cloudflare Pages — SPA fallback.
+# Prerender ile üretilen /siir/<slug>/index.html dosyaları varsa onlar servis edilir;
+# bulunamayan tüm yollar React uygulamasına (index.html) düşer.
+/*    /index.html   200

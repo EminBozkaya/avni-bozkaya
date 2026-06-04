@@ -5,19 +5,39 @@ import BookSpread from './components/BookSpread'
 import { playBookOpenSound } from './utils/sound'
 import { findPoemBySlug, poemSlugs } from './utils/slug'
 
-function parseHash(): { poemId: number | null } {
-  const hash = window.location.hash
-  const match = hash.match(/^#\/siir\/(.+)$/)
-  if (match) {
-    const found = findPoemBySlug(match[1])
+function parseLocation(): { poemId: number | null } {
+  // Önce temiz URL: /siir/<slug>
+  const pathMatch = window.location.pathname.match(/^\/siir\/([^/]+)\/?$/)
+  if (pathMatch) {
+    const found = findPoemBySlug(decodeURIComponent(pathMatch[1]))
+    if (found) return { poemId: found.id }
+  }
+  // Geriye dönük uyumluluk: #/siir/<slug>
+  const hashMatch = window.location.hash.match(/^#\/siir\/(.+)$/)
+  if (hashMatch) {
+    const found = findPoemBySlug(decodeURIComponent(hashMatch[1]))
     if (found) return { poemId: found.id }
   }
   return { poemId: null }
 }
 
 function App() {
-  const [isBookOpen, setIsBookOpen] = useState(() => parseHash().poemId !== null)
-  const [initialPoemId, setInitialPoemId] = useState<number | null>(() => parseHash().poemId)
+  const [isBookOpen, setIsBookOpen] = useState(() => parseLocation().poemId !== null)
+  const [initialPoemId, setInitialPoemId] = useState<number | null>(() => parseLocation().poemId)
+
+  // Eski hash URL'i ile gelen ziyaretçileri temiz URL'e yönlendir (replaceState — geçmişi kirletmez).
+  useEffect(() => {
+    const hashMatch = window.location.hash.match(/^#\/siir\/(.+)$/)
+    if (hashMatch) {
+      const found = findPoemBySlug(decodeURIComponent(hashMatch[1]))
+      if (found) {
+        const entry = poemSlugs.find((p) => p.id === found.id)
+        if (entry) {
+          history.replaceState(null, '', `/siir/${entry.slug}/`)
+        }
+      }
+    }
+  }, [])
 
   const handleOpen = () => {
     playBookOpenSound()
@@ -27,26 +47,30 @@ function App() {
   const handleClose = () => {
     setIsBookOpen(false)
     setInitialPoemId(null)
-    history.replaceState(null, '', window.location.pathname)
+    history.replaceState(null, '', '/')
   }
 
   const handlePoemNavigate = useCallback((poemId: number) => {
     const entry = poemSlugs.find((p) => p.id === poemId)
     if (entry) {
-      history.replaceState(null, '', `#/siir/${entry.slug}`)
+      history.replaceState(null, '', `/siir/${entry.slug}/`)
     }
   }, [])
 
   useEffect(() => {
-    const onHashChange = () => {
-      const { poemId } = parseHash()
+    const onLocationChange = () => {
+      const { poemId } = parseLocation()
       if (poemId !== null) {
         setInitialPoemId(poemId)
         setIsBookOpen(true)
       }
     }
-    window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
+    window.addEventListener('hashchange', onLocationChange)
+    window.addEventListener('popstate', onLocationChange)
+    return () => {
+      window.removeEventListener('hashchange', onLocationChange)
+      window.removeEventListener('popstate', onLocationChange)
+    }
   }, [])
 
   return (
