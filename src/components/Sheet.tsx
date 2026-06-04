@@ -12,35 +12,47 @@ interface SheetProps {
   isMobileView?: boolean
 }
 
+interface PoemFontOpts {
+  min: number
+  max: number
+  /** Average char width as a fraction of font size (proportional Turkish text). */
+  charW: number
+  /** Line height multiplier used for the vertical fit. */
+  lineFactor: number
+  /** Reserved vertical space for the title block on first vs. continuation pages. */
+  titleFirst: number
+  titleCont: number
+  /** Vertical gap between stanzas. */
+  gapPx: number
+}
+
 /**
- * Calculate an optimal font size for a poem page on mobile.
- * Fits the longest line horizontally and all lines vertically,
- * then returns the largest size that satisfies both constraints.
+ * Calculate the largest poem font that fits the longest line horizontally
+ * (lines never wrap — they use whitespace-nowrap) and all lines vertically,
+ * clamped to [min, max]. Because the result is fit-constrained, raising the
+ * font target never reflows lines or stanzas.
  */
-function calcMobilePoemFont(
+function calcPoemFont(
   stanzas: string[][],
   isFirstPage: boolean,
   availW: number,
   availH: number,
+  o: PoemFontOpts,
 ): number {
   const allLines = stanzas.flat()
-  if (allLines.length === 0) return 13
+  if (allLines.length === 0) return o.max
 
   const longestLine = Math.max(...allLines.map((l) => l.length))
   const totalLines = allLines.length
   const stanzaGaps = Math.max(0, stanzas.length - 1)
 
-  // Horizontal: longest line must fit without wrapping
-  // Average char width ≈ 0.52 × fontSize for proportional Turkish text
-  const hMax = longestLine > 0 ? availW / (longestLine * 0.52) : 20
+  const hMax = longestLine > 0 ? availW / (longestLine * o.charW) : o.max
 
-  // Vertical: title + all lines + stanza gaps must fit
-  const titleH = isFirstPage ? 44 : 26
-  const gapPx = 10
-  const remainH = availH - titleH - stanzaGaps * gapPx
-  const vMax = remainH > 0 ? remainH / (totalLines * 1.55) : 13
+  const titleH = isFirstPage ? o.titleFirst : o.titleCont
+  const remainH = availH - titleH - stanzaGaps * o.gapPx
+  const vMax = remainH > 0 ? remainH / (totalLines * o.lineFactor) : o.min
 
-  return Math.max(7, Math.min(18, hMax, vMax))
+  return Math.max(o.min, Math.min(o.max, hMax, vMax))
 }
 
 /** Renders a single book page. */
@@ -55,11 +67,12 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
   const isMobile = isMobileView ?? false
   const padX = `${Math.max(isMobile ? 16 : 24, Math.round(48 * s))}px`
 
+  // On tablet/desktop the page number always sits on the right; on mobile it
+  // follows the page side so the open-book left/right feel is preserved.
+  const pageNumberSide = isMobile && side === 'left' ? 'left-4' : 'right-4'
   const pageNumberEl = (
     <div
-      className={`absolute bottom-2 ${
-        side === 'left' ? 'left-4' : 'right-4'
-      } font-body text-[19px] tracking-widest text-ink-light/45`}
+      className={`absolute bottom-2 ${pageNumberSide} font-body text-[19px] tracking-widest text-ink-light/45`}
     >
       {sheet.pageNumber}
     </div>
@@ -176,18 +189,64 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
     )
   }
 
-  // poem sheet
-  const padXNum = isMobile ? Math.max(16, Math.round(28 * s)) : Math.max(24, Math.round(48 * s))
+  // poem sheet — tighter left/right margins so poems get a bit more width on every screen
+  const padXNum = isMobile ? Math.max(12, Math.round(22 * s)) : Math.max(18, Math.round(36 * s))
   const padYNum = isMobile ? Math.max(16, Math.round(28 * s)) : 48
   const poemPadX = `${padXNum}px`
   const poemPadY = `${padYNum}px`
 
-  // Font size: on mobile, dynamically calculate per page; on tablet/desktop, use standard scaling
-  const desktopFontSize = Math.max(13, Math.round(19 * s))
-  const mobileFontSize = isMobile
-    ? Math.round(calcMobilePoemFont(sheet.stanzas, sheet.isFirstPage, pw - padXNum * 2, ph - padYNum * 2 - 20))
-    : desktopFontSize
-  const poemFontSize = isMobile ? mobileFontSize : desktopFontSize
+  // Prose notes (intro under the title, dedication after the date) render at a
+  // fixed size and may wrap onto several lines — they are not verses.
+  const introNote = sheet.introNote ?? ''
+  const closingNote = sheet.closingNote ?? ''
+  const noteFontSize = isMobile ? 12 : 14
+  const noteLineH = 1.45
+
+  // Font size is fit-constrained on every screen so verses grow as large as the
+  // space left over by the notes allows, without ever wrapping a line.
+  const availW = pw - padXNum * 2
+  const availH = ph - padYNum * 2 - 20
+
+  // Reserve the vertical room a wrapped note takes so verses are sized for the rest.
+  const estNoteHeight = (note: string, marginPx: number) => {
+    if (!note) return 0
+    const charsPerLine = Math.max(1, Math.floor(availW / (noteFontSize * 0.5)))
+    const lines = Math.max(1, Math.ceil(note.length / charsPerLine))
+    return lines * noteFontSize * noteLineH + marginPx
+  }
+  const versesAvailH = Math.max(
+    60,
+    availH - estNoteHeight(introNote, 18) - estNoteHeight(closingNote, 14),
+  )
+
+  let poemFontSize: number
+  if (isMobile) {
+    poemFontSize = Math.round(
+      calcPoemFont(sheet.stanzas, sheet.isFirstPage, availW, versesAvailH, {
+        min: 7,
+        max: 20,
+        charW: 0.52,
+        lineFactor: 1.55,
+        titleFirst: 44,
+        titleCont: 26,
+        gapPx: 10,
+      }),
+    )
+  } else {
+    // Never shrink below the previous fixed desktop size; only grow where the page has room.
+    const desktopBase = Math.max(13, Math.round(19 * s))
+    poemFontSize = Math.round(
+      calcPoemFont(sheet.stanzas, sheet.isFirstPage, availW, versesAvailH, {
+        min: desktopBase,
+        max: Math.max(desktopBase, Math.round(23 * s)),
+        charW: 0.52,
+        lineFactor: 1.7,
+        titleFirst: Math.max(20, Math.round(32 * s)) + 40,
+        titleCont: 44,
+        gapPx: 20,
+      }),
+    )
+  }
 
   const titleSize = isMobile
     ? Math.max(12, Math.round(poemFontSize * 1.5))
@@ -220,6 +279,18 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
           </p>
         </div>
       )}
+      {introNote && (
+        <p
+          className="font-body italic text-ink-light/70 text-center"
+          style={{
+            fontSize: `${noteFontSize}px`,
+            lineHeight: noteLineH,
+            marginBottom: isMobile ? '10px' : '18px',
+          }}
+        >
+          {introNote}
+        </p>
+      )}
       <div className="flex-1 flex flex-col items-center justify-center" style={{ gap: stanzaGap }}>
         {sheet.stanzas.map((stanza, si) => (
           <div key={si} className="text-center">
@@ -238,9 +309,18 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
             ))}
           </div>
         ))}
+        {closingNote && (
+          <p
+            className="font-body italic text-ink-light/70 text-center"
+            style={{ fontSize: `${noteFontSize}px`, lineHeight: noteLineH, marginTop: '4px' }}
+          >
+            {closingNote}
+          </p>
+        )}
       </div>
-      {/* Rose ornament on the opposite side of the page number */}
-      <RoseMotif variant="ornament" side={side} />
+      {/* On tablet/desktop the ornament always uses the right-page (un-mirrored)
+          orientation; on mobile it follows the page side. */}
+      <RoseMotif variant="ornament" side={isMobile ? side : 'right'} />
       {pageNumberEl}
     </div>
   )
