@@ -15,6 +15,8 @@ export type Sheet =
     pageNumber: number
     /** Prose note shown under the title (first page only); wraps, not a verse. */
     introNote?: string
+    /** Render the intro note in the sans (Inter) font to set a quotation apart. */
+    introNoteSans?: boolean
     /** Prose note shown after the date (last page only); wraps, not a verse. */
     closingNote?: string
   }
@@ -34,7 +36,10 @@ export interface PoemIndexEntry {
  * heuristic can't detect (no parenthesis, not long enough). Add ids here as such
  * cases are spotted. e.g. 52 = "Selam Sana Pilotum!".
  */
-const FORCED_INTRO_NOTE_IDS = new Set<number>([52])
+const FORCED_INTRO_NOTE_IDS = new Set<number>([52, 46])
+
+/** Poem ids whose intro note is a quotation shown in the sans font. 46 = "Nefsine Uyma Kardeş". */
+const SANS_INTRO_NOTE_IDS = new Set<number>([46])
 
 /** A line that is part of the closing block: a date or the poet's signature. */
 function isMetaLine(line: string): boolean {
@@ -82,15 +87,27 @@ function extractIntroNote(lines: string[], title: string, forced = false): { int
   const looksLikeNote = forced || first.startsWith('(') || first.length > 70
   if (!looksLikeNote) return { introNote: '', rest: lines }
 
-  // Skip the note line and any blank separator after it.
-  let j = i + 1
-  while (j < lines.length && lines[j] === '') j++
-  const rest = lines.slice(0, i).concat(lines.slice(j))
+  // The whole opening stanza (consecutive non-blank lines) is the note — it may
+  // span several lines, e.g. a quoted couplet plus an attribution.
+  let j = i
+  while (j < lines.length && lines[j] !== '') j++
+  let noteLines = lines.slice(i, j)
+
+  // A multi-line note where each line is individually wrapped in parentheses is a
+  // single logical note; drop the per-line parentheses and keep the line breaks.
+  if (noteLines.length > 1 && noteLines.every((l) => l.startsWith('(') && l.endsWith(')'))) {
+    noteLines = noteLines.map((l) => l.slice(1, -1))
+  }
+
+  // Skip the note stanza and any blank separator after it.
+  let k = j
+  while (k < lines.length && lines[k] === '') k++
+  const rest = lines.slice(0, i).concat(lines.slice(k))
 
   // If the parenthetical just echoes the title subtitle, omit it entirely.
   const stripped = first.replace(/[()]/g, '').trim()
   const isTitleDup = stripped.length > 0 && title.includes(stripped)
-  return { introNote: isTitleDup ? '' : first, rest }
+  return { introNote: isTitleDup ? '' : noteLines.join('\n'), rest }
 }
 
 /** Split a flat list of poem lines into stanzas (separated by blank lines). */
@@ -241,6 +258,7 @@ export function buildBook(): Book {
         stanzas,
         pageNumber: currentPageNo(),
         introNote: idx === 0 ? introNote : '',
+        introNoteSans: idx === 0 && SANS_INTRO_NOTE_IDS.has(poem.id),
         closingNote: idx === pages.length - 1 ? closingNote : '',
       })
     })

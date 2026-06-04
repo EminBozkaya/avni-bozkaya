@@ -211,7 +211,10 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
   const estNoteHeight = (note: string, marginPx: number) => {
     if (!note) return 0
     const charsPerLine = Math.max(1, Math.floor(availW / (noteFontSize * 0.5)))
-    const lines = Math.max(1, Math.ceil(note.length / charsPerLine))
+    // Sum wrapped line counts across explicit line breaks.
+    const lines = note
+      .split('\n')
+      .reduce((sum, seg) => sum + Math.max(1, Math.ceil(seg.length / charsPerLine)), 0)
     return lines * noteFontSize * noteLineH + marginPx
   }
   const versesAvailH = Math.max(
@@ -281,9 +284,11 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
       )}
       {introNote && (
         <p
-          className="font-body italic text-ink-light/70 text-center"
+          className={`text-ink-light/70 text-center whitespace-pre-line ${
+            sheet.introNoteSans ? 'font-sans' : 'font-body italic'
+          }`}
           style={{
-            fontSize: `${noteFontSize}px`,
+            fontSize: `${sheet.introNoteSans ? noteFontSize - 1 : noteFontSize}px`,
             lineHeight: noteLineH,
             marginBottom: isMobile ? '10px' : '18px',
           }}
@@ -311,7 +316,7 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
         ))}
         {closingNote && (
           <p
-            className="font-body italic text-ink-light/70 text-center"
+            className="font-body italic text-ink-light/70 text-center whitespace-pre-line"
             style={{ fontSize: `${noteFontSize}px`, lineHeight: noteLineH, marginTop: '4px' }}
           >
             {closingNote}
