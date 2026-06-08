@@ -158,8 +158,9 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
         )}
         {!showHeader && <div style={{ height: `${Math.max(8, Math.round(24 * s))}px` }} />}
         <ul className="flex-1 flex flex-col justify-between">
-          {slice.map((poem) => {
+          {slice.map((poem, idx) => {
             const startPage = book.index.get(poem.id)?.startPage ?? poem.page
+            const position = sheet.tocStart + idx + 1
             return (
               <li key={poem.id}>
                 <button
@@ -169,6 +170,17 @@ export default function Sheet({ sheet, side, onSelectPoem, pageWidth, pageHeight
                   className="w-full flex items-end gap-2 px-1 rounded hover:bg-ink/5 transition-colors duration-200 group cursor-pointer text-left"
                   style={{ paddingTop: `${Math.max(2, Math.round(6 * s))}px`, paddingBottom: `${Math.max(2, Math.round(6 * s))}px` }}
                 >
+                  <span
+                    className="pointer-events-none font-serif italic text-ink-light/70 tabular-nums whitespace-nowrap"
+                    style={{
+                      fontSize: `${Math.max(11, Math.round(14 * s))}px`,
+                      minWidth: `${Math.max(28, Math.round(34 * s))}px`,
+                      textAlign: 'right',
+                      letterSpacing: '0.02em',
+                    }}
+                  >
+                    {position}<span className="mx-1 opacity-60">—</span>
+                  </span>
                   <span
                     className="pointer-events-none font-body text-ink group-hover:text-rose transition-colors duration-200 whitespace-nowrap truncate"
                     style={{ fontSize: `${Math.max(13, Math.round(17 * s))}px` }}

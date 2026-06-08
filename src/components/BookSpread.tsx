@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BookOpen, Volume2, VolumeX, X } from 'lucide-react'
 import HTMLFlipBook from 'react-pageflip'
 import Sheet from './Sheet'
 import MobileNotebook from './MobileNotebook'
@@ -10,6 +10,8 @@ import {
 import { playPageTurnSound, playBookOpenSound } from '../utils/sound'
 
 const MOBILE_BREAKPOINT = 768
+// Iki satirli nav (mobile + tablet); >= bu degerde masaustu tek satir nav.
+const COMPACT_NAV_BREAKPOINT = 1024
 
 interface BookSpreadProps {
   onClose: () => void
@@ -31,6 +33,15 @@ export default function BookSpread({ onClose, initialPoemId, onPoemNavigate }: B
 
   // ── Mobile detection ──
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < MOBILE_BREAKPOINT)
+  const [isCompactNav, setIsCompactNav] = useState(() => window.innerWidth < COMPACT_NAV_BREAKPOINT)
+
+  // ── Ses tercihi (localStorage'da saklanir) ──
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    try { return localStorage.getItem('guldali-sound') !== '0' } catch { return true }
+  })
+  useEffect(() => {
+    try { localStorage.setItem('guldali-sound', soundEnabled ? '1' : '0') } catch { /* yoksay */ }
+  }, [soundEnabled])
 
   const goNext = useCallback(() => {
     if (isMobile) {
@@ -108,6 +119,7 @@ export default function BookSpread({ onClose, initialPoemId, onPoemNavigate }: B
       if (muteNextSoundRef.current) {
         muteNextSoundRef.current = false
       } else {
+        // playPageTurnSound icinde localStorage kontrolu yapilir (sound.ts)
         playPageTurnSound()
       }
     }
@@ -118,7 +130,8 @@ export default function BookSpread({ onClose, initialPoemId, onPoemNavigate }: B
   }, [])
 
   // ── Dynamically size the book so it ALWAYS fits the viewport ──
-  const NAV_HEIGHT = 56
+  // Tek satir nav: 56, iki satir nav (mobil/tablet): 100
+  const NAV_HEIGHT = isCompactNav ? 100 : 56
   const PAGE_RATIO = 770 / 620
 
   function calcSize() {
@@ -126,7 +139,8 @@ export default function BookSpread({ onClose, initialPoemId, onPoemNavigate }: B
     const vh = window.innerHeight
     const sideGap = Math.max(36, Math.round(vw * 0.045))
     const availW = vw - sideGap * 2
-    const availH = vh - NAV_HEIGHT - 8
+    const navH = vw < COMPACT_NAV_BREAKPOINT ? 100 : 56
+    const availH = vh - navH - 8
 
     let spreadW = Math.min(availW, 1400)
     let spreadH = (spreadW / 2) * PAGE_RATIO
@@ -151,6 +165,7 @@ export default function BookSpread({ onClose, initialPoemId, onPoemNavigate }: B
       timer = setTimeout(() => {
         const mobile = window.innerWidth < MOBILE_BREAKPOINT
         setIsMobile(mobile)
+        setIsCompactNav(window.innerWidth < COMPACT_NAV_BREAKPOINT)
         if (!mobile) {
           const { w, h } = calcSize()
           setBookW(w)
@@ -219,55 +234,133 @@ export default function BookSpread({ onClose, initialPoemId, onPoemNavigate }: B
 
       {/* Bottom Navigation — flex-shrink-0 keeps it pinned */}
       <div
-        className="flex-shrink-0 flex items-center justify-between w-full max-w-[1400px] mx-auto font-body text-sm text-ink-light px-4"
+        className="flex-shrink-0 w-full max-w-[1400px] mx-auto font-body text-ink-light px-3 sm:px-4"
         style={{ height: `${NAV_HEIGHT}px` }}
       >
-        <button
-          onClick={goPrev}
-          disabled={currentPage === 0}
-          className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-2 rounded transition-all ${
-            currentPage > 0 ? 'hover:text-ink hover:bg-ink/5 cursor-pointer' : 'opacity-25 cursor-default'
-          }`}
-        >
-          <ChevronLeft size={22} />
-          <span className="hidden sm:inline">Önceki</span>
-        </button>
+        {isCompactNav ? (
+          /* ───── MOBIL & TABLET: iki satir ───── */
+          <div className="h-full flex flex-col py-1.5 gap-1">
+            {/* Ust satir: Fihrist · Kitabi Kapat · Ses toggle (belirgin buton stili) */}
+            <div className="flex-1 flex items-center justify-center gap-2">
+              <button
+                onClick={goToToc}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-ink/8 hover:bg-ink/12 active:bg-ink/18 transition-colors cursor-pointer text-ink text-[13px] font-medium shadow-sm border border-ink/8"
+                aria-label="Fihrist"
+              >
+                <BookOpen size={15} />
+                <span>Fihrist</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-ink/8 hover:bg-ink/12 active:bg-ink/18 transition-colors cursor-pointer text-ink text-[13px] font-medium shadow-sm border border-ink/8"
+                aria-label="Kitabı Kapat"
+              >
+                <X size={15} />
+                <span>Kitabı Kapat</span>
+              </button>
+              <button
+                onClick={() => setSoundEnabled(v => !v)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-ink/8 hover:bg-ink/12 active:bg-ink/18 transition-colors cursor-pointer text-ink text-[13px] font-medium shadow-sm border border-ink/8"
+                aria-label={soundEnabled ? 'Sayfa sesini kapat' : 'Sayfa sesini aç'}
+                title={soundEnabled ? 'Sayfa sesini kapat' : 'Sayfa sesini aç'}
+              >
+                {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+                <span>Ses</span>
+              </button>
+            </div>
+            {/* Alt satir: <-  X/Y  -> (genis parmak dokunma alani) */}
+            <div className="flex-1 flex items-center justify-between gap-2">
+              <button
+                onClick={goPrev}
+                disabled={currentPage === 0}
+                className={`flex items-center justify-center flex-1 max-w-[140px] h-10 rounded-full transition-all ${
+                  currentPage > 0
+                    ? 'bg-ink/5 hover:bg-ink/10 active:bg-ink/15 cursor-pointer text-ink'
+                    : 'opacity-20 cursor-default'
+                }`}
+                aria-label="Önceki sayfa"
+              >
+                <ChevronLeft size={28} strokeWidth={2.2} />
+              </button>
+              <span className="tabular-nums text-ink-light text-sm font-medium px-2">
+                {currentPage + 1} / {book.sheets.length}
+              </span>
+              <button
+                onClick={goNext}
+                disabled={currentPage >= book.sheets.length - 1}
+                className={`flex items-center justify-center flex-1 max-w-[140px] h-10 rounded-full transition-all ${
+                  currentPage < book.sheets.length - 1
+                    ? 'bg-ink/5 hover:bg-ink/10 active:bg-ink/15 cursor-pointer text-ink'
+                    : 'opacity-20 cursor-default'
+                }`}
+                aria-label="Sonraki sayfa"
+              >
+                <ChevronRight size={28} strokeWidth={2.2} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ───── MASAUSTU: tek satir, belirgin butonlar ───── */
+          <div className="h-full flex items-center justify-between text-sm">
+            <button
+              onClick={goPrev}
+              disabled={currentPage === 0}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                currentPage > 0
+                  ? 'hover:bg-ink/8 cursor-pointer text-ink'
+                  : 'opacity-25 cursor-default'
+              }`}
+            >
+              <ChevronLeft size={22} />
+              <span>Önceki</span>
+            </button>
 
-        <div className="flex items-center gap-2 md:gap-4">
-          <button
-            onClick={goToToc}
-            className="flex items-center gap-1.5 transition-colors hover:text-ink cursor-pointer"
-            title="Fihrist"
-          >
-            <BookOpen size={14} className="hidden sm:inline-block" />
-            <span>Fihrist</span>
-          </button>
-          <span className="text-ink/15">|</span>
-          <button
-            onClick={onClose}
-            className="transition-colors hover:text-ink cursor-pointer"
-            title="Kitabı Kapat"
-          >
-            Kitabı Kapat
-          </button>
-          <span className="text-ink/15">|</span>
-          <span className="tabular-nums text-ink-light/60 text-xs md:text-sm">
-            {currentPage + 1} / {book.sheets.length}
-          </span>
-        </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={goToToc}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full hover:bg-ink/8 transition-colors cursor-pointer text-ink font-medium"
+                title="Fihrist"
+              >
+                <BookOpen size={16} />
+                <span>Fihrist</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full hover:bg-ink/8 transition-colors cursor-pointer text-ink font-medium"
+                title="Kitabı Kapat"
+              >
+                <X size={16} />
+                <span>Kitabı Kapat</span>
+              </button>
+              <button
+                onClick={() => setSoundEnabled(v => !v)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full hover:bg-ink/8 transition-colors cursor-pointer text-ink font-medium"
+                aria-label={soundEnabled ? 'Sayfa sesini kapat' : 'Sayfa sesini aç'}
+                title={soundEnabled ? 'Sayfa sesini kapat' : 'Sayfa sesini aç'}
+              >
+                {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                <span>{soundEnabled ? 'Ses açık' : 'Ses kapalı'}</span>
+              </button>
+              <span className="text-ink/15 mx-1">|</span>
+              <span className="tabular-nums text-ink-light/70 text-sm">
+                {currentPage + 1} / {book.sheets.length}
+              </span>
+            </div>
 
-        <button
-          onClick={goNext}
-          disabled={currentPage >= book.sheets.length - 1}
-          className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-2 rounded transition-all ${
-            currentPage < book.sheets.length - 1
-              ? 'hover:text-ink hover:bg-ink/5 cursor-pointer'
-              : 'opacity-25 cursor-default'
-          }`}
-        >
-          <span className="hidden sm:inline">Sonraki</span>
-          <ChevronRight size={22} />
-        </button>
+            <button
+              onClick={goNext}
+              disabled={currentPage >= book.sheets.length - 1}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                currentPage < book.sheets.length - 1
+                  ? 'hover:bg-ink/8 cursor-pointer text-ink'
+                  : 'opacity-25 cursor-default'
+              }`}
+            >
+              <span>Sonraki</span>
+              <ChevronRight size={22} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

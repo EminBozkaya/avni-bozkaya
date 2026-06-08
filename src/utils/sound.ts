@@ -5,6 +5,18 @@ const AudioCtor =
 
 let audioCtx: AudioContext | null = null
 
+/**
+ * Kullanici sayfa sesini kapattiysa true doner.
+ * Tercih localStorage'da 'guldali-sound' anahtarinda saklanir ('0' = kapali).
+ */
+function isSoundEnabled(): boolean {
+  try {
+    return localStorage.getItem('guldali-sound') !== '0'
+  } catch {
+    return true
+  }
+}
+
 function getAudioContext(): AudioContext {
   if (!audioCtx) audioCtx = new AudioCtor()
   // Some browsers suspend the context until a user gesture.
@@ -38,6 +50,7 @@ function fillCrinkleNoise(data: Float32Array, amplitude = 1) {
  * Play the user's custom page-turn MP3.
  */
 export function playPageTurnSound(_direction?: 1 | -1) {
+  if (!isSoundEnabled()) return
   // Create a new Audio object each time to allow overlapping rapid page turns
   const audio = new Audio('/sounds/paper_flip.mp3')
   audio.volume = 0.25 // Ses seviyesini kıstık
@@ -56,6 +69,7 @@ export function playPageTurnSound(_direction?: 1 | -1) {
  * paper rustle, as if a hardcover settles onto the desk.
  */
 export function playBookOpenSound() {
+  if (!isSoundEnabled()) return
   const ctx = getAudioContext()
   const now = ctx.currentTime
   const master = ctx.createGain()
